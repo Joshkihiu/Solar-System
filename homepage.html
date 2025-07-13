@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Homepage</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: black;
+      font-family: 'Segoe UI', sans-serif;
+      color: white;
+    }
+    canvas {
+      display: block;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: -1;
+    }
+    .container {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      z-index: 1;
+    }
+    h1 {
+      font-size: 3rem;
+      color: cyan;
+    }
+    #sideMenu {
+      position: fixed;
+      top: 0;
+      left: -160px;
+      width: 180px;
+      height: 100%;
+      background: rgba(0,255,255,0.08);
+      border-right: 2px solid cyan;
+      backdrop-filter: blur(10px);
+      transition: left 0.3s ease, opacity 0.3s ease;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      padding: 20px 10px;
+      opacity: 0;
+    }
+    #sideMenu:hover {
+      left: 0;
+      opacity: 1;
+    }
+    #sideMenu nav {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      flex: 1;
+    }
+    #sideMenu a {
+      color: white;
+      text-decoration: none;
+      font-size: 18px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+    #sideMenu a:hover {
+      background: rgba(0, 255, 255, 0.2);
+    }
+    #logoutBtn {
+      margin-top: 20px;
+      align-self: flex-start;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="solarSystemCanvas"></canvas>
+
+  <div id="sideMenu">
+    <nav>
+      <a href="#">Dashboard</a>
+      <a href="#">Settings</a>
+      <a href="#">Profile</a>
+    </nav>
+    <a href="#" id="logoutBtn" onclick="logout()">Logout</a>
+  </div>
+
+  <div class="container">
+    <h1>Welcome to the Homepage</h1>
+  </div>
+
+  <!-- Three.js & dependencies -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <script>
+    let scene, camera, renderer, controls;
+    let celestialBodies = [], starfield;
+
+    function createParticleSphere(radius, color, numParticles, particleSize) {
+      const geometry = new THREE.BufferGeometry();
+      const positions = [];
+      const colors = [];
+      const colorObj = new THREE.Color(color);
+
+      for (let i = 0; i < numParticles; i++) {
+        const phi = Math.acos(2 * Math.random() - 1);
+        const theta = Math.random() * Math.PI * 2;
+        const x = radius * Math.sin(phi) * Math.cos(theta);
+        const y = radius * Math.sin(phi) * Math.sin(theta);
+        const z = radius * Math.cos(phi);
+        positions.push(x, y, z);
+        colors.push(colorObj.r, colorObj.g, colorObj.b);
+      }
+
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+      const material = new THREE.PointsMaterial({
+        size: particleSize,
+        vertexColors: true,
+        transparent: true,
+        opacity: 1.0,
+        blending: THREE.AdditiveBlending
+      });
+
+      return new THREE.Points(geometry, material);
+    }
+
+    function createStarfield(numStars, maxDistance, starSize) {
+      const geometry = new THREE.BufferGeometry();
+      const positions = [];
+      const colors = [];
+      const color = new THREE.Color(0xFFFFFF);
+
+      for (let i = 0; i < numStars; i++) {
+        const x = (Math.random() * 2 - 1) * maxDistance;
+        const y = (Math.random() * 2 - 1) * maxDistance;
+        const z = (Math.random() * 2 - 1) * maxDistance;
+        positions.push(x, y, z);
+        colors.push(color.r, color.g, color.b);
+      }
+
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+      const material = new THREE.PointsMaterial({
+        size: starSize,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.8,
+        blending: THREE.AdditiveBlending
+      });
+
+      return new THREE.Points(geometry, material);
+    }
+
+    function init() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x000000);
+
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.set(0, 0, 150);
+
+      renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('solarSystemCanvas'), antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(window.devicePixelRatio);
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+
+      const sun = createParticleSphere(25, 0xFDB813, 3000, 1.0);
+      scene.add(sun);
+      celestialBodies.push(sun);
+
+      const planetData = [
+        { color: 0xAAAAAA, distance: 30, speed: 0.002, size: 1, particles: 200 },
+        { color: 0xFFD700, distance: 40, speed: 0.0016, size: 1.2, particles: 300 },
+        { color: 0x00BFFF, distance: 50, speed: 0.0012, size: 1.4, particles: 400 },
+        { color: 0xFF4500, distance: 60, speed: 0.001, size: 1.1, particles: 250 },
+        { color: 0xFFCC99, distance: 90, speed: 0.0006, size: 2.5, particles: 600 },
+        { color: 0xDAA520, distance: 120, speed: 0.0005, size: 2.2, particles: 500 },
+        { color: 0x87CEEB, distance: 150, speed: 0.0004, size: 1.8, particles: 400 },
+        { color: 0x4169E1, distance: 180, speed: 0.0003, size: 1.7, particles: 350 }
+      ];
+
+      planetData.forEach(p => {
+        const planet = createParticleSphere(p.size, p.color, p.particles, 0.5);
+        planet.userData = { angle: 0, distance: p.distance, speed: p.speed };
+        scene.add(planet);
+        celestialBodies.push(planet);
+      });
+
+      starfield = createStarfield(5000, 600, 0.3);
+      scene.add(starfield);
+
+      animate();
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      celestialBodies.forEach((body, i) => {
+        if (i === 0) return;
+        const data = body.userData;
+        data.angle += data.speed;
+        body.position.x = data.distance * Math.cos(data.angle);
+        body.position.z = data.distance * Math.sin(data.angle);
+      });
+
+      starfield.rotation.y += 0.00005;
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    function logout() {
+      if (firebase?.auth) {
+        firebase.auth().signOut().then(() => {
+          window.location.href = "index.html";
+        });
+      } else {
+        window.location.href = "index.html";
+      }
+    }
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    window.onload = init;
+  </script>
+</body>
+</html>

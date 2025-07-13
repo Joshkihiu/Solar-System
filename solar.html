@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Homepage</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: black;
+      font-family: 'Segoe UI', sans-serif;
+      color: white;
+    }
+    canvas {
+      display: block;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: -1;
+    }
+    .container {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      z-index: 1;
+    }
+    h1 {
+      font-size: 3rem;
+      color: cyan;
+    }
+    #sideMenu {
+      position: fixed;
+      top: 0;
+      left: -160px;
+      width: 180px;
+      height: 100%;
+      background: rgba(0,255,255,0.08);
+      border-right: 2px solid cyan;
+      backdrop-filter: blur(10px);
+      transition: left 0.3s ease, opacity 0.3s ease;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      padding: 20px 10px;
+      opacity: 0;
+    }
+    #sideMenu:hover {
+      left: 0;
+      opacity: 1;
+    }
+    #sideMenu nav {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      flex: 1;
+    }
+    #sideMenu a {
+      color: white;
+      text-decoration: none;
+      font-size: 18px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+    #sideMenu a:hover {
+      background: rgba(0, 255, 255, 0.2);
+    }
+    #logoutBtn {
+      margin-top: auto;
+      margin-bottom: 60px;
+      align-self: flex-start;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="solarSystemCanvas"></canvas>
+
+  <div id="sideMenu">
+    <nav>
+      <a href="#">Dashboard</a>
+      <a href="#">Settings</a>
+      <a href="#">Profile</a>
+    </nav>
+    <a href="#" id="logoutBtn" onclick="logout()">Logout</a>
+  </div>
+
+  <div class="container">
+    <h1>Welcome to the Homepage</h1>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <script>
+    let scene, camera, renderer, controls;
+    function init() {
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.set(0, 50, 150);
+
+      renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('solarSystemCanvas'), antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(window.devicePixelRatio);
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+
+      const starGeo = new THREE.BufferGeometry();
+      const starCount = 10000;
+      const starPositions = [];
+      for (let i = 0; i < starCount; i++) {
+        const x = (Math.random() - 0.5) * 2000;
+        const y = (Math.random() - 0.5) * 2000;
+        const z = (Math.random() - 0.5) * 2000;
+        starPositions.push(x, y, z);
+      }
+      starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPositions, 3));
+
+      const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 1, transparent: true });
+      const starField = new THREE.Points(starGeo, starMaterial);
+      scene.add(starField);
+
+      animate();
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    function logout() {
+      if (firebase?.auth) {
+        firebase.auth().signOut().then(() => {
+          window.location.href = "index.html";
+        });
+      } else {
+        window.location.href = "index.html";
+      }
+    }
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    window.onload = init;
+  </script>
+</body>
+</html>
