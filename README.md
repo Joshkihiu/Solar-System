@@ -1,4 +1,4 @@
 # Solar-System
 
-<img src="relative/path/to/image.png" alt="Alt Text" width="400"/>
+<img src="solar.png" alt="Alt Text" width="400"/>
 
